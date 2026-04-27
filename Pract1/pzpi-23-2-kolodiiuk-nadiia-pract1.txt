@@ -1,0 +1,1154 @@
+Харківський університет радіоелектроніки
+Факультет комп'ютерних наук
+Катедра програмної інженерії
+
+
+
+
+ЗВІТ
+до практичного заняття № 1 з дисципліни
+"Архітектура програмного забезпечення"
+на тему "Шаблон (патерн) проєктування ПЗ" 
+
+
+
+Виконала ст. гр. ПЗПІ-23-2
+Колодіюк Надія Сергіївна
+
+
+Перевірив
+ст. викладач катедри ПІ
+Сокорчук Ігор Петрович
+
+
+
+
+
+Харків 2026 
+1 ІСТОРІЯ ЗМІН
+
+№	Дата	Версія звіту	Опис змін та виправлень
+1	19.02.2026	0.1	Створено розділ «Завдання»
+2	27.04.2026	0.2	Створено розділ «Опис виконаної роботи»
+
+2	ЗАВДАННЯ
+
+Метою практичного заняття є ознайомитися з одним із шаблонів (патернів) проєктування програмного забезпечення, проаналізувати його структуру, призначення та практичне застосування.
+Відповідно до завдання необхідно:
+1.	Підготувати доповідь на тему: «Шаблон (патерн) проєктування ПЗ: __________________»
+2.	Обрати шаблон (патерн) із книги GoF (крім Singleton)
+3.	Розробити слайди презентації доповіді
+4.	Записати відеозапис доповіді тривалістю 10–12 хвилин
+5.	Опублікувати відео на YouTube з облікового запису @nure.ua
+6.	Створити та налаштувати GitHub-репозиторій студента
+7.	Створити структуру директорій репозиторію відповідно до вимог дисципліни
+8.	Додати файл README.md встановленої структури
+9.	Завантажити програмний код прикладів шаблона (патерна)
+10.	 Експортувати звіт у:
+-	PDF;
+-	простий текстовий файл TXT з кодуванням UTF-8
+11.	 Завантажити звіт у форматі PDF на платформу dl.nure.ua
+12.	 Завантажити звіт у форматі TXT у репозиторій
+
+3 ОПИС ВИКОНАНОЇ РОБОТИ
+
+3.1 Загальні відомості про шаблони (патерни) проєктування
+
+Патерни проектування є часто використовуваними способами реалізації певного типу взаємодії між класами та створення їх об'єктів за певними правилами. У книзі «Патерни об'єктно-орієнтованого проектування» її автори (так звані Gang of Four – Гамма Е., Хелм Р., Джонсон Р., Вліссідес Д.) виділили та описали найбільш поширені патерни, зазначаючи їх структуру, мету застосування та поради щодо їх використання. Патерни GoF діляться на три великі групи: поведінкові, структурні та породжувальні. До поведінкових відносяться патерни, що допомогають реалізувати взаємодію між об'єктами програми найбільш ефективним чином. Структурні патерни вирішують проблему компонування об'єктів та спрощення інтерфейсів. Породжувальні патерни знаходять використання при потребі контролювати створення та ініціалізацію об'єктів. Ця група патернів в першу чергу орієнтована та описана для мов, що мають гарну підтримку об'єктно-орієнтованої парадигми, проте варіанти їх реалізації існують і в інших популярних парадигмах.
+
+3.2 Опис обраного патерна
+
+Назва патерна: Ітератор.
+Тип шаблона (патерна): поведінковий.
+Основне призначення: необхідність зручної ітерації по елементам об'єкта і при цьому не руйнувати інкапсуляцію та гарантії, що вона надає.
+Передумови застосування: є колекція або інша складна структура даних (наприклад, реалізація патерну Композит або дерево, що обходиться за певними алгоритмами) і необхідно реалізувати можливість послідовного з боку клієнта обходу даного об'єкту таким чином, що клієнтському коду не потрібно знати про особливості внутрішньої організації структури даних.
+Переваги: може спростити використання класів, що призначені для зберігання даних і мають складну структуру їх зберігання (наприклад, ієрархічну), різні ітератори можуть реалізовувати різні алгоритми обходу структури.
+Недоліки: може додати непотрібну складність, якщо клієнтський код може використати звичайний цикл.
+
+3.3 Структура шаблона (патерна)
+
+Опис структурних частин:
+Патерн Ітератор складається з чотирьох основних учасників.
+IIterator<T> — абстрактний інтерфейс ітератора. Оголошує операції для послідовного обходу елементів. Наприклад, Next() (отримання наступного елемента) та Reset() (скидання позиції до початку).
+IIterableCollection<T> — абстрактний інтерфейс агрегату (колекції). Оголошує фабричний метод CreateIterator(), що повертає об'єкт відповідного ітератора.
+Iterator — конкретний ітератор. Реалізує інтерфейс IIterator<T> та зберігає поточну позицію у послідовності. Містить логіку, що безпосередньо повертає наступний елемент агрегату.
+IterableCollection — конкретний агрегат. Реалізує інтерфейс IIterableCollection<T >, зазвичай зберігає елементи колекції або складної структури та створює екземпляр Iterator через метод CreateIterator().
+
+Опис взаємодії об'єктів
+Клієнтський код створює об'єкт IterableCollection, передаючи вхідні дані. Викликаючи метод CreateIterator(), клієнт отримує об'єкт LexerIterator, що знає лише про рядок та поточну позицію в ньому. Клієнт циклічно викликає MoveNext(), не маючи жодної залежності від внутрішніх деталей лексичного аналізу. Метод Reset() дозволяє повторно обійти ті самі токени без створення нового ітератора.
+
+ 
+
+Рисунок 3.1 – UML-діаграма патерну Ітератор
+
+3.4 Реалізація шаблона (патерна)
+
+У цій реалізації патерн Iterator використано для послідовного обходу вхідного тексту та перетворення його на набір токенів. Ітератор інкапсулює логіку розбору рядка, а клієнтський код працює лише з абстракцією, не знаючи деталей лексичного аналізу. 
+1. Створення базових інтерфейсів
+Спочатку визначено два узагальнені інтерфейси:
+IIterator<T> – описує поведінку ітератора.
+Він містить метод MoveNext(), який переходить до наступного елемента, властивість Current для отримання поточного елемента та метод Reset() для скидання стану.
+IIterableCollection<T> – описує колекцію, яка може створювати ітератор.
+Її єдиний метод CreateIterator() повертає об’єкт типу IIterator<T>.
+Таке розділення відповідає ідеї патерну Iterator: колекція не розкриває свою внутрішню структуру, а надає спосіб послідовного обходу елементів.
+2. Реалізація конкретних класів
+Для демонстрації патерну створено клас Token, який представляє один лексемний елемент. Він зберігає два значення: Text – текст токена, та Type – його тип, наприклад integer, keyword, operator, string, identifier або whitespace.
+Основна логіка зосереджена в класі LexerIterator, який реалізує IIterator<Token>.
+Цей клас зберігає вхідний рядок у вигляді масиву символів, а також службові поля для поточної позиції, поточного токена та стану обходу.
+Метод MoveNext() аналізує символи починаючи з поточної позиції та визначає, який саме токен потрібно зчитати. Для цього використовується розгалуження за першим символом:
+•	якщо символ є оператором, викликається LexOp(); 
+•	якщо це цифра, викликається LexInteger(); 
+•	якщо це лапка, викликається LexStr(); 
+•	якщо це пробільний символ, викликається LexWhitespace(); 
+•	в усіх інших випадках виконується перевірка на логічні значення, ключові слова або ідентифікатори через LexBooleanIdentifierKeyword(). 
+Кожен окремий метод відповідає за зчитування конкретного типу токена:
+•	LexOp() створює токен-оператор; 
+•	LexInteger() зчитує послідовність цифр; 
+•	LexStr() зчитує рядковий літерал у лапках; 
+•	LexWhitespace() зчитує послідовність пробілів, табуляцій або переходів на новий рядок; 
+•	LexBooleans() розпізнає true і false; 
+•	LexKeywords() розпізнає службові слова return, if, else, for, while, func, break; 
+•	LexIdentifiers() зчитує ідентифікатори, які можуть містити літери, цифри, символ _ і $. 
+Таким чином, LexerIterator не просто обходить колекцію, а виконує прикладну логіку лексичного аналізу.
+Клас LexingCollection реалізує IIterableCollection<Token> і зберігає вхідний буфер. Його завдання просте: створити новий екземпляр LexerIterator для переданого тексту. Це дозволяє відокремити саму колекцію від механізму її обходу.
+3. Демонстрація використання
+У методі Main() створюється вхідний рядок:
+func calculate(int x)\nreturn x + 2
+Далі цей рядок передається до LexingCollection, після чого викликається CreateIterator(). Отриманий ітератор використовується в допоміжному методі ToArray(), де цикл while (lexer.MoveNext()) послідовно читає всі токени та додає їх у список.
+Після цього токени виводяться в консоль у форматі:
+Text - Type
+Результат виконання коду:
+func - keyword
+  - whitespace
+calculate - identifier
+( - operator
+int - identifier
+  - whitespace
+x - identifier
+) - operator
+
+ - whitespace
+return - keyword
+  - whitespace
+x - identifier
+  - whitespace
++ - operator
+  - whitespace
+2 - integer
+
+3.5 Організація GitHub-репозиторію
+
+Назва репозиторію: NureKolodiiukNadiia/apz-pzpi-23-2-kolodiiuk-nadiia
+Структура репозиторію:
+Pract1/  
+Pract2/  
+Lab1/  
+Lab2/  
+Lab3/  
+Lab4/  
+Lab5/  
+README.md  
+LICENSE  
+Файл опису репозиторію README.md:
+
+# <назва репозиторію>
+<академічна група>
+<прізвище імʼя>
+<тема доповіді ПЗ1>
+<тема доповіді ПЗ2>
+<тема проєкту ЛР>
+
+3.6 Підготовка презентації
+Слайди створено відповідно до таких вимог: українська мова, науково-технічний стиль, нумерація слайдів.
+
+3.7 Підготовка відеозапису доповіді
+Створено запис доповіді на тему практичного заняття.
+
+3.8. Запити до ШІ
+Запит 1
+Назва інструменту та версія: Gemma 4 E4B.
+Мета використання: приведення у відповідність класичному розумінню патерна ітератор реалізації лексера. 
+Внесок автора: існуюча реалізація лексера, додавання класу Program з кодом, що тестує ітератор.
+Запит 2
+Назва інструменту та версія: ChatGPT, GPT 5.3.
+Мета використання: детальний опис роботи лексера. 
+Внесок автора: корекція відповіді ВММ, додавання результату тесту.
+
+4 ВИСНОВКИ
+
+У результаті виконання практичного заняття було:
+-	досліджено патерн Ітератор;
+-	проаналізовано його архітектурні особливості;
+-	реалізовано приклади програмного коду;
+-	сформовано навички застосування патернів проєктування;
+-	створено GitHub-репозиторій із стандартизованою структурою;
+-	підготовлено презентацію та відеодоповідь.
+Практичне застосування патернів проєктування дозволяє підвищити повторне використання коду, масштабованість та підтримуваність програмних систем. 
+ДОДАТОК А
+Відеозапис доповіді
+
+Відеозапис доповіді на YouTube: https://youtu.be/3Ik6heXPnBg 
+
+Хронологічний опис
+
+00:09 - Патерни проектування
+02:20 - Призначення патерну Ітератор
+04:15 - Структура патерну: інтерфейси
+06:19 - Конкретні реалізації
+07:58 - Практична реалізація лексера
+09:33 - LexerIterator
+11:00 - Деталі розпізнавання токенів
+12:50 - Взаємодія з клієнтським кодом
+14:39 - Переваги та недоліки
+16:25 - Висновки 
+ДОДАТОК Б
+Слайди презентації
+
+ 
+Рисунок Б.1 – Титульний слайд
+
+ 
+Рисунок Б.2 – Патерни проектування
+ 
+Рисунок Б.3 – Призначення патерну Ітератор
+
+ 
+Рисунок Б.4 – Структура патерну
+ 
+Рисунок Б.5 – Конкретні реалізації
+
+ 
+Рисунок Б.6 – UML діаграма
+ 
+Рисунок Б.7 – Практична реалізація лексера
+
+ Рисунок Б.8 – Реалізація логіки обходу колекції
+ 
+Рисунок Б.9 – Деталі розпізнавання токенів
+
+ Рисунок Б.10 – Взаємодія з клієнтським кодом
+
+ 
+Рисунок Б.11 – Переваги та недоліки патерну Ітератор
+
+ 
+Рисунок Б.12 – Висновки  
+ДОДАТОК В
+Приклади програмного коду
+
+1 using System;
+2 using System.Text;
+3
+4 namespace Solution;
+5
+6 public class Token
+7 {
+8     public string Text { get; }
+9     public string Type { get; }
+10
+11     public Token(string text, string type)
+12     {
+13         Text = text;
+14         Type = type;
+15     }
+16 }
+17
+18 public interface IIterator<T>
+19 {
+20     bool MoveNext();
+21     T Current { get; }
+22     void Reset();
+23 }
+24
+25 public interface IIterableCollection<T>
+26 {
+27     IIterator<T> CreateIterator();
+28 }
+29
+30 public class LexerIterator : IIterator<Token>
+31 {
+32     private const string IntegerCode = "integer";
+33     private const string BooleanCode = "boolean";
+34     private const string OperatorCode = "operator";
+35     private const string StringCode = "string";
+36     private const string KeywordCode = "keyword";
+37     private const string WhitespaceCode = "whitespace";
+38     private const string IdentifierCode = "identifier";
+39     private const string True = "true";
+40     private const string False = "false";
+41     private const string Return = "return";
+42     private const string If = "if";
+43     private const string Else = "else";
+44     private const string For = "for";
+45     private const string While = "while";
+46     private const string Func = "func";
+47     private const string Break = "break";
+48
+49     private readonly char[] _str;
+50     private int _currIndex;
+51     private Token _current;
+52     private readonly int _len;
+53     private bool _hasNotMovedNext;
+54
+55     public LexerIterator(string buffer)
+56     {
+57         if (buffer is null)
+58         {
+59             buffer = "";
+60         }
+61         _str = new char[buffer.Length];
+62         _len = buffer.Length;
+63         for (var i = 0; i < buffer.Length; ++i)
+64         {
+65             _str[i] = buffer[i];
+66         }
+67     }
+68
+69     public Token Current
+70     {
+71         get
+72         {
+73             if (_hasNotMovedNext)
+74             {
+75                 throw new InvalidOperationException("No current token available.");
+76             }
+77             return _current;
+78         }
+79     }
+80
+81     public void Reset()
+82     {
+83         _currIndex = 0;
+84     }
+85
+86     public bool MoveNext()
+87     {
+88         if (_currIndex >= _len)
+89         {
+90             _hasNotMovedNext = true;
+91
+92             return false;
+93         }
+94
+95         var res = false;
+96         switch (_str[_currIndex])
+97         {
+98             case '+' or '-' or '*' or '/' or '%' or '(' or ')' or '=':
+99                 {
+100                     res = LexOp();
+101                     break;
+102                 }
+103             case '0' or '1' or '2' or '3' or '4' or '5' or '6' or '7' or '8' or '9':
+104                 {
+105                     res = LexInteger();
+106                     break;
+107                 }
+108             case '"':
+109                 {
+110                     res = LexStr();
+111                     break;
+112                 }
+113             case ' ' or '\t' or '\n':
+114                 {
+115                     res = LexWhitespace();
+116                     break;
+117                 }
+118             default:
+119                 {
+120                     res = LexBooleanIdentifierKeyword();
+121                     break;
+122                 }
+123         }
+124
+125         _hasNotMovedNext = !res;
+126
+127         return res;
+128     }
+129
+130     private bool LexOp()
+131     {
+132         _current = new Token(_str[_currIndex++].ToString(), OperatorCode);
+133
+134         return true;
+135     }
+136
+137     private bool LexInteger()
+138     {
+139         var sb = new StringBuilder();
+140         var i = _currIndex;
+141         while (i < _len && _str[i] >= '0' && _str[i] <= '9')
+142         {
+143             sb.Append(_str[i]);
+144             i++;
+145         }
+146
+147         _currIndex = i;
+148         _current = new Token(sb.ToString(), IntegerCode);
+149
+150         return true;
+151     }
+152
+153     private bool LexStr()
+154     {
+155         var sb = new StringBuilder();
+156         sb.Append('"');
+157         var i = ++_currIndex;
+158         while (i < _len && _str[i] != '"')
+159         {
+160             sb.Append(_str[i]);
+161             i++;
+162         }
+163
+164         if (i < _len && _str[i] == '"')
+165         {
+166             sb.Append('"');
+167             _currIndex = i + 1;
+168             _current = new Token(sb.ToString(), StringCode);
+169
+170             return true;
+171         }
+172         else
+173         {
+174             return false;
+175         }
+176     }
+177
+178     private bool LexWhitespace()
+179     {
+180         var sb = new StringBuilder();
+181         var i = _currIndex;
+182         while (i < _len && (_str[i] == ' ' || _str[i] == '\t' || _str[i] == '\n'))
+183         {
+184             sb.Append(_str[i]);
+185             i++;
+186         }
+187
+188         _currIndex = i;
+189         _current = new Token(sb.ToString(), WhitespaceCode);
+190
+191         return true;
+192     }
+193
+194     private Token LexBooleans()
+195     {
+196         if (_len - _currIndex >= 4)
+197         {
+198             var span = new ReadOnlySpan<char>(_str, _currIndex, 4);
+199             if (span is True)
+200             {
+201                 _currIndex += 4;
+202
+203                 return new Token(True, BooleanCode);
+204             }
+205         }
+206
+207         if (_len - _currIndex >= 5)
+208         {
+209             var span = new ReadOnlySpan<char>(_str, _currIndex, 5);
+210             if (span is False)
+211             {
+212                 _currIndex += 5;
+213
+214                 return new Token(False, BooleanCode);
+215             }
+216         }
+217
+218         return null;
+219     }
+220
+221     private Token LexKeywords()
+222     {
+223         for (int i = 2; i <= 6; ++i)
+224         {
+225             if (_len - _currIndex >= i)
+226             {
+227                 var span = new ReadOnlySpan<char>(_str, _currIndex, i);
+228                 if (span is Return or If or Else or For or While or Func or Break)
+229                 {
+230                     _currIndex += i;
+231
+232                     return new Token(span.ToString(), KeywordCode);
+233                 }
+234             }
+235         }
+236
+237         return null;
+238     }
+239
+240     private Token LexIdentifiers()
+241     {
+242         var sb = new StringBuilder();
+243         while (_currIndex < _len && !IsStopIdentifierLexing(_str[_currIndex]))
+244         {
+245             sb.Append(_str[_currIndex]);
+246             _currIndex++;
+247         }
+248
+249         return new Token(sb.ToString(), IdentifierCode);
+250
+251         bool IsStopIdentifierLexing(char c)
+252         {
+253             var isOp = c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '(' || c == ')' || c == '=';
+254             var isWhiteSpace = c == ' ' || c == '\n' || c == '\t';
+255             var isNotAlphaNumericExtended = !(char.IsLetterOrDigit(c) || c == '_' || c == '$');
+256
+257             return isOp || isWhiteSpace || isNotAlphaNumericExtended;
+258         }
+259     }
+260
+261     bool LexBooleanIdentifierKeyword()
+262     {
+263         var token = LexBooleans();
+264         if (token is not null)
+265         {
+266             _current = token;
+267
+268             return true;
+269         }
+270
+271         token = LexKeywords();
+272         if (token is not null)
+273         {
+274             _current = token;
+275
+276             return true;
+277         }
+278
+279         token = LexIdentifiers();
+280         if (token is not null)
+281         {
+282             _current = token;
+283
+284             return true;
+285         }
+286
+287         return false;
+288     }
+289 }
+290
+291 public class LexingCollection : IIterableCollection<Token>
+292 {
+293     private readonly string _inputBuffer;
+294
+295     public LexingCollection(string buffer)
+296     {
+297         _inputBuffer = buffer ?? "";
+298     }
+299
+300     public IIterator<Token> CreateIterator()
+301     {
+302         return new LexerIterator(_inputBuffer);
+303     }
+304 }
+305
+306 public class Program
+307 {
+308     public static void Main(string[] args)
+309     {
+310         var code = "func calculate(int x)\nreturn x + 2";
+311         var collection = new LexingCollection(code);
+312         var lexerIterator = collection.CreateIterator();
+313         Console.WriteLine("--- Lexing Tokens ---");
+314         var tokens = ToArray(lexerIterator);
+315         foreach (var token in tokens)
+316         {
+317             Console.WriteLine($"{token.Text} - {token.Type}");
+318         }
+319
+320     }
+321     private static Token[] ToArray(IIterator<Token> lexer)
+322     {
+323         List<Token> tokens = new List<Token>();
+324         while (lexer.MoveNext())
+325         {
+326             tokens.Add(lexer.Current);
+327         }
+328
+329         return tokens.ToArray();
+330     }
+331 }
+
+Приклади запитів до ШІ
+
+Rewrite this lexer implementation into a following structure:
+interface IIterator
+bool MoveNext()
+T Current // property
+void Reset()
+IIterableCollection
+CreateIterator
+Iterator - a concrete implementation
+IterableCollection - a concrete iterable collection
+do not change the logic of implementation itself (methods that perform lexing, fields), if i did not specify otherwise. Do not implement IEnumerable<T> and IEnumerator<T> from BCL.
+using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Text;
+namespace Solution
+{
+    public class Token
+    {
+        private string Text { get; }
+        private string Type { get; }
+        public Token(string text, string type)
+        {
+            Text = text;
+            Type = type;
+        }
+    }
+    class Simplexer : Iterator
+    {
+        private const string IntegerCode = "integer";
+        private const string BooleanCode = "boolean";
+        private const string OperatorCode = "operator";
+        private const string StringCode = "string";
+        private const string KeywordCode = "keyword";
+        private const string WhitespaceCode = "whitespace";
+        private const string IdentifierCode = "identifier";
+        private char[] _s;
+        private int _currIndex;
+        private Token _current;
+        private int _len;
+        private bool _wasFalse;
+        public Simplexer(string buffer)
+        {
+            if (buffer is null)
+            {
+                buffer = "";
+            }
+            _s = new char[buffer.Length];
+            _len = buffer.Length;
+            for (var i = 0; i < buffer.Length; ++i)
+            {
+                _s[i] = buffer[i];
+            }
+        }
+        public void Reset()
+        {
+            _currIndex = 0;
+        }
+        public override bool MoveNext()
+        {
+            if (_currIndex >= _len)
+            {
+                _wasFalse = true;
+                return false;
+            }
+            var res = false;
+            switch (_s[_currIndex])
+            {
+                case '+' or '-' or '*' or '/' or '%' or '(' or ')' or '=':
+                    {
+                        res = LexOp();
+                        break;
+                    }
+                case '0' or '1' or '2' or '3' or '4' or '5' or '6' or '7' or '8' or '9':
+                    {
+                        res = LexInteger();
+                        break;
+                    }
+                case '"':
+                    {
+                        res = LexStr();
+                        break;
+                    }
+                case ' ' or '\t' or '\n':
+                    {
+                        res = LexWhitespace();
+                        break;
+                    }
+                default:
+                    {
+                        res = LexBooleanIdentifierKeyword();
+                        break;
+                    }
+            }
+            _wasFalse = res ? false : true;
+            return res;
+        }
+        private bool LexOp()
+        {
+            _current = new Token(_s[_currIndex++].ToString(), OperatorCode);
+            return true;
+        }
+        private bool LexInteger()
+        {
+            var sb = new StringBuilder();
+            var i = _currIndex;
+            while (i < _len && _s[i] >= '0' && _s[i] <= '9')
+            {
+                sb.Append(_s[i]);
+                i++;
+            }
+            _currIndex = i;
+            _current = new Token(sb.ToString(), IntegerCode);
+            return true;
+        }
+        private bool LexStr()
+        {
+            var sb = new StringBuilder();
+            sb.Append('"');
+            var i = ++_currIndex;
+            while (i < _len && _s[i] != '"')
+            {
+                sb.Append(_s[i]);
+                i++;
+            }
+            if (i < _len && _s[i] == '"')
+            {
+                sb.Append('"');
+                _currIndex = i + 1;
+                _current = new Token(sb.ToString(), StringCode);
+                return true;
+            }
+            else
+            {
+                return false;
+            }
+        }
+        private bool LexWhitespace()
+        {
+            var sb = new StringBuilder();
+            var i = _currIndex;
+            while (i < _len && (_s[i] == ' ' || _s[i] == '\t' || _s[i] == '\n'))
+            {
+                sb.Append(_s[i]);
+                i++;
+            }
+            _currIndex = i;
+            _current = new Token(sb.ToString(), WhitespaceCode);
+            return true;
+        }
+        private Token LexBooleans()
+        {
+            if (_len - _currIndex >= 4)
+            {
+                var span = new ReadOnlySpan(_s, _currIndex, 4);
+                if (span is "true")
+                {
+                    _currIndex += 4;
+                    return new Token("true", BooleanCode);
+                }
+            }
+            if (_len - _currIndex >= 5)
+            {
+                var span = new ReadOnlySpan(_s, _currIndex, 5);
+                if (span is "false")
+                {
+                    _currIndex += 5;
+                    return new Token("false", BooleanCode);
+                }
+            }
+            return null;
+        }
+        private Token LexKeywords()
+        {
+            for (int i = 2; i <= 6; ++i)
+            {
+                if (_len - _currIndex >= i)
+                {
+                    var span = new ReadOnlySpan(_s, _currIndex, i);
+                    if (span is "return" or "if" or "else" or "for" or "while" or "func" or "break")
+                    {
+                        _currIndex += i;
+                        return new Token(span.ToString(), KeywordCode);
+                    }
+                }
+            }
+            return null;
+        }
+        private Token LexIdentifiers()
+        {
+            var sb = new StringBuilder();
+            while (_currIndex < _len && !IsStopIdentifierLexing(_s[_currIndex]))
+            {
+                sb.Append(_s[_currIndex]);
+                _currIndex++;
+            }
+            return new Token(sb.ToString(), IdentifierCode);
+            bool IsStopIdentifierLexing(char c)
+            {
+                var isOp = c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '(' || c == ')' || c == '=';
+                var isWhiteSpace = c == ' ' || c == '\n' || c == '\t';
+                var isNotAlphaNumericExtended = !(char.IsLetterOrDigit(c) || c == '_' || c == '$');
+                return isOp || isWhiteSpace || isNotAlphaNumericExtended;
+
+            }
+        }
+        bool LexBooleanIdentifierKeyword()
+        {
+            var token = LexBooleans();
+            if (token is not null)
+            {
+                _current = token;
+                return true;
+            }
+            token = LexKeywords();
+            if (token is not null)
+            {
+                _current = token;
+                return true;
+            }
+            token = LexIdentifiers();
+            if (token is not null)
+            {
+                _current = token;
+                return true;
+            }
+            return false;
+        }
+        public override Token Current
+        {
+            get
+            {
+                if (_wasFalse)
+                {
+                    throw new InvalidOperationException();
+                }
+                return _current;
+            }
+        }
+    }
+}
+
+
+Запит 2
+Напиши опис реалізації за цим планом: Опис реалізації мовою програмування C# 
+Використання патерну буде продемонстроване на прикладі реалізації ітератору для лексеру.
+Основні етапи:
+Створення базових інтерфейсів
+Реалізація конкретних класів
+Демонстрація використання
+using System;
+using System.Text;
+
+namespace Solution;
+
+public class Token
+{
+    public string Text { get; }
+    public string Type { get; }
+
+    public Token(string text, string type)
+    {
+        Text = text;
+        Type = type;
+    }
+}
+
+public interface IIterator<T>
+{
+    bool MoveNext();
+    T Current { get; }
+    void Reset();
+}
+
+public interface IIterableCollection<T>
+{
+    IIterator<T> CreateIterator();
+}
+
+
+public class LexerIterator : IIterator<Token>
+{
+    private const string IntegerCode = "integer";
+    private const string BooleanCode = "boolean";
+    private const string OperatorCode = "operator";
+    private const string StringCode = "string";
+    private const string KeywordCode = "keyword";
+    private const string WhitespaceCode = "whitespace";
+    private const string IdentifierCode = "identifier";
+    private const string True = "true";
+    private const string False = "false";
+    private const string Return = "return";
+    private const string If = "if";
+    private const string Else = "else";
+    private const string For = "for";
+    private const string While = "while";
+    private const string Func = "func";
+    private const string Break = "break";
+
+    private readonly char[] _str;
+    private int _currIndex;
+    private Token _current;
+    private readonly int _len;
+    private bool _hasNotMovedNext;
+
+    public LexerIterator(string buffer)
+    {
+        if (buffer is null)
+        {
+            buffer = "";
+        }
+        _str = new char[buffer.Length];
+        _len = buffer.Length;
+        for (var i = 0; i < buffer.Length; ++i)
+        {
+            _str[i] = buffer[i];
+        }
+    }
+
+    public Token Current
+    {
+        get
+        {
+            if (_hasNotMovedNext)
+            {
+                throw new InvalidOperationException("No current token available.");
+            }
+            return _current;
+        }
+    }
+
+    public void Reset()
+    {
+        _currIndex = 0;
+    }
+
+    public bool MoveNext()
+    {
+        if (_currIndex >= _len)
+        {
+            _hasNotMovedNext = true;
+
+            return false;
+        }
+
+        var res = false;
+        switch (_str[_currIndex])
+        {
+            case '+' or '-' or '*' or '/' or '%' or '(' or ')' or '=':
+                {
+                    res = LexOp();
+                    break;
+                }
+            case '0' or '1' or '2' or '3' or '4' or '5' or '6' or '7' or '8' or '9':
+                {
+                    res = LexInteger();
+                    break;
+                }
+            case '"':
+                {
+                    res = LexStr();
+                    break;
+                }
+            case ' ' or '\t' or '\n':
+                {
+                    res = LexWhitespace();
+                    break;
+                }
+            default:
+                {
+                    res = LexBooleanIdentifierKeyword();
+                    break;
+                }
+        }
+
+        _hasNotMovedNext = !res;
+
+        return res;
+    }
+
+    private bool LexOp()
+    {
+        _current = new Token(_str[_currIndex++].ToString(), OperatorCode);
+
+        return true;
+    }
+
+    private bool LexInteger()
+    {
+        var sb = new StringBuilder();
+        var i = _currIndex;
+        while (i < _len && _str[i] >= '0' && _str[i] <= '9')
+        {
+            sb.Append(_str[i]);
+            i++;
+        }
+
+        _currIndex = i;
+        _current = new Token(sb.ToString(), IntegerCode);
+
+        return true;
+    }
+
+    private bool LexStr()
+    {
+        var sb = new StringBuilder();
+        sb.Append('"');
+        var i = ++_currIndex;
+        while (i < _len && _str[i] != '"')
+        {
+            sb.Append(_str[i]);
+            i++;
+        }
+
+        if (i < _len && _str[i] == '"')
+        {
+            sb.Append('"');
+            _currIndex = i + 1;
+            _current = new Token(sb.ToString(), StringCode);
+
+            return true;
+        }
+        else
+        {
+            return false;
+        }
+    }
+
+    private bool LexWhitespace()
+    {
+        var sb = new StringBuilder();
+        var i = _currIndex;
+        while (i < _len && (_str[i] == ' ' || _str[i] == '\t' || _str[i] == '\n'))
+        {
+            sb.Append(_str[i]);
+            i++;
+        }
+
+        _currIndex = i;
+        _current = new Token(sb.ToString(), WhitespaceCode);
+
+        return true;
+    }
+
+    private Token LexBooleans()
+    {
+        if (_len - _currIndex >= 4)
+        {
+            var span = new ReadOnlySpan<char>(_str, _currIndex, 4);
+            if (span is True)
+            {
+                _currIndex += 4;
+
+                return new Token(True, BooleanCode);
+            }
+        }
+
+        if (_len - _currIndex >= 5)
+        {
+            var span = new ReadOnlySpan<char>(_str, _currIndex, 5);
+            if (span is False)
+            {
+                _currIndex += 5;
+
+                return new Token(False, BooleanCode);
+            }
+        }
+
+        return null;
+    }
+
+    private Token LexKeywords()
+    {
+        for (int i = 2; i <= 6; ++i)
+        {
+            if (_len - _currIndex >= i)
+            {
+                var span = new ReadOnlySpan<char>(_str, _currIndex, i);
+                if (span is Return or If or Else or For or While or Func or Break)
+                {
+                    _currIndex += i;
+
+                    return new Token(span.ToString(), KeywordCode);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private Token LexIdentifiers()
+    {
+        var sb = new StringBuilder();
+        while (_currIndex < _len && !IsStopIdentifierLexing(_str[_currIndex]))
+        {
+            sb.Append(_str[_currIndex]);
+            _currIndex++;
+        }
+
+        return new Token(sb.ToString(), IdentifierCode);
+
+        bool IsStopIdentifierLexing(char c)
+        {
+            var isOp = c == '+' || c == '-' || c == '*' || c == '/' || c == '%' || c == '(' || c == ')' || c == '=';
+            var isWhiteSpace = c == ' ' || c == '\n' || c == '\t';
+            var isNotAlphaNumericExtended = !(char.IsLetterOrDigit(c) || c == '_' || c == '$');
+
+            return isOp || isWhiteSpace || isNotAlphaNumericExtended;
+        }
+    }
+
+    bool LexBooleanIdentifierKeyword()
+    {
+        var token = LexBooleans();
+        if (token is not null)
+        {
+            _current = token;
+
+            return true;
+        }
+
+        token = LexKeywords();
+        if (token is not null)
+        {
+            _current = token;
+
+            return true;
+        }
+
+        token = LexIdentifiers();
+        if (token is not null)
+        {
+            _current = token;
+
+            return true;
+        }
+
+        return false;
+    }
+}
+
+public class LexingCollection : IIterableCollection<Token>
+{
+    private readonly string _inputBuffer;
+
+    public LexingCollection(string buffer)
+    {
+        _inputBuffer = buffer ?? "";
+    }
+
+    public IIterator<Token> CreateIterator()
+    {
+        return new LexerIterator(_inputBuffer);
+    }
+}
+
+public class Program
+{
+    public static void Main(string[] args)
+    {
+        var code = "func calculate(int x)\nreturn x + 2"; 
+        var collection = new LexingCollection(code);
+        var lexerIterator = collection.CreateIterator();
+        Console.WriteLine("--- Lexing Tokens ---");
+        var tokens = ToArray(lexerIterator);
+        foreach (var token in tokens)
+        {
+            Console.WriteLine($"{token.Text} - {token.Type}");
+        }
+
+    }
+    private static Token[] ToArray(IIterator<Token> lexer)
+    {
+        List<Token> tokens = new List<Token>();
+        while (lexer.MoveNext())
+        {
+            tokens.Add(lexer.Current);
+        }
+
+        return tokens.ToArray();
+    }
+}
+

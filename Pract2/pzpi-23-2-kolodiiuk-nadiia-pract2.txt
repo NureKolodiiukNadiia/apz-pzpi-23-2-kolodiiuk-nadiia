@@ -1,0 +1,568 @@
+Харківський університет радіоелектроніки
+Факультет комп'ютерних наук
+Катедра програмної інженерії
+
+
+
+
+ЗВІТ
+до практичного заняття № 2 з дисципліни
+"Архітектура програмного забезпечення"
+на тему "Архітектура відомих програмних систем" 
+
+
+
+Виконала ст. гр. ПЗПІ-23-2
+Колодіюк Надія Сергіївна
+
+
+Перевірив
+ст. викладач катедри ПІ
+Сокорчук Ігор Петрович
+
+
+
+
+
+Харків 2026 
+1 ІСТОРІЯ ЗМІН
+
+№	Дата	Версія звіту	Опис змін та виправлень
+1	19.02.2026			0.1	Створено розділи «Завдання», «Хід роботи»
+2	24.04.2026	0.2	Додано опис виконаної роботи
+
+2 ЗАВДАННЯ
+
+Метою роботи є дослідження архітектури складної програмної системи та аналіз застосованих архітектурних підходів. У межах роботи необхідно:
+•	виконати аналіз архітектури програмної системи;
+•	визначити архітектурний стиль;
+•	описати основні компоненти;
+•	проаналізувати взаємодію підсистем;
+•	оцінити масштабованість та переваги архітектурних рішень;
+•	підготувати презентацію та відеодоповідь;
+•	оформити звіт відповідно до ДСТУ 3008:2015.
+
+3 ОПИС ВИКОНАНОЇ РОБОТИ
+
+3.1 Загальні відомості про систему 
+
+Назва системи: Spotify.
+Розробник: Spotify AB (Швеція), публічна компанія (з 2018 року). 
+Призначення системи: Глобальна платформа потокового аудіо (музика, подкасти, аудіокниги, live-події). 
+Користувачі: понад 600 млн щомісячних активних користувачів (MAU) у 190+ країнах (станом на 2025–2026), меломани, поціновувачі музики. 
+Основні функції: персоналізоване відтворення та рекомендації, створення та спільний доступ до плейлистів, офлайн-режим, аналітика прослуховувань у реальному часі (мільярди подій на день, соціальні елементи та монетизація для артистів. 
+
+3.2	Архітектурний стиль системи 
+
+Архітектурний стиль — мікросервісна подієво-орієнтована (event-driven) система з акцентом на децентралізацію та хмарно-нативний підхід. Архітектура тісно пов'язана з моделлю управління командами (Squad, Tribe, Chapter, Guild), де кожна автономна команда розробників (Squad) відповідає за повний життєвий цикл свого сервісу від UI до бази даних. Основні функції (пошук, плейлисти, рекомендації) реалізовано як незалежні модулі, що дозволяє швидко виявляти помилки без блокування всієї системи та оперативно проводити A/B тестування.
+
+3.3	 Основні компоненти системи
+
+Інтерфейс користувача реалізовано за допомогою бібліотек React (веб), React Native/Swift/Kotlin (мобільні), Electron (десктоп). 
+Серверна частина реалізована як мікросервіси на Java/Spring Boot (основна), Scala, Node.js, Go. Тобто, на рівні бізнес-логіки є окремі сервіси (Playback, Recommendation Engine, Search, User Profile, Analytics, тощо), які працюють над своїми вузько-спеціалізованими задачами та можуть масштабуватися незалежно.
+На рівні зберігання даних використовюється Cassandra (плейлисти, користувацькі дані), Redis (кеш метаданих), PostgreSQL (транзакції), BigQuery + Google Cloud Storage (аналітика та аудіо-файли).
+Допоміжні сервіси: Apache Kafka (основний event bus), Google Pub/Sub (фонова обробка), Kubernetes + Docker (оркестрація), Backstage (внутрішній developer portal для управління мікросервісами), Prometheus + Grafana (моніторинг), Terraform (IaC).
+
+3.4	 Взаємодія компонентів 
+
+Внутрішня комунікація базується на gRPC та REST API. Для відтворення музики застосовуються HTTP range-запити (завантаження аудіо у форматах OGG Vorbis або AAC частинами) та локальна буферизація. Клієнти підключаються до найближчого дата-центру через API Gateway, який відповідає за балансування, автентифікацію (OAuth 2.0) та rate-limiting. Обробка мільярдів подій у реальному часі працює через Apache Kafka (потік подій), Apache Storm та Google Pub/Sub (публікація-підписка).
+
+
+ 
+
+Рис. 2.1 – C4 Model діаграма
+
+
+ 
+
+Рис. 2.2. – Діаграма послідовностей
+
+
+ 
+
+Рис. 2.3 – Діаграма розгортання
+
+3.5	 Масштабованість та надійність
+
+-	Балансування навантаження: Kubernetes Services + Ingress, GCP Load Balancer.
+-	Відмовостійкість: Ізоляція сервісів (один впав — інші працюють), retries в Kafka, multi-zone/regional deployment в GCP.
+-	Кешування: Redis (метадані треків, сесії) + CDN для аудіо.
+-	Реплікація: Cassandra (multi-DC), BigQuery streaming inserts, Kubernetes Horizontal Pod Autoscaler.
+-	Контейнеризація та хмарна інфраструктура: Docker + Kubernetes на Google Cloud Platform (міграція 2016 року).
+3.6	 Приклади програмної реалізації 
+
+У межах дослідження було розглянуто спрощену модель подієво-орієнтованої мікросервісної архітектури, подібної до тієї, що використовується у стримінгових платформах (наприклад, Spotify). Основною ідеєю є асинхронна взаємодія сервісів через брокер повідомлень Apache Kafka.
+1. Сервіс генерації подій (Producer)
+Сервіс відтворення музики формує події (PlaybackEvent) та публікує їх у Kafka-топік. Ключем повідомлення виступає ідентифікатор користувача, що забезпечує впорядкованість подій у межах одного користувача. Конфігурація Kafka-продюсера визначає параметри надійності доставки. Код наведено у додатку В.
+Використання параметра enable.idempotence=true дозволяє уникнути дублювання повідомлень при повторних спробах відправки.
+У реальних системах використовується декілька топіків для різних етапів обробки даних.
+Такий підхід дозволяє:
+•	виконувати повторну обробку даних; 
+•	ізолювати різні етапи обробки; 
+•	масштабувати систему незалежно по компонентах. 
+2. Сервіс обробки подій (Consumer)
+Аналітичні або інші сервіси підписуються на Kafka-топіки та обробляють події асинхронно.
+Для забезпечення контролю над доставкою використовується ручне підтвердження обробки повідомлень (manual commit).
+3. Потокова обробка даних (Stream Processing)
+Для агрегації великих обсягів даних застосовуються потокові фреймворки (наприклад, Apache Beam / Scio). Обробка включає фільтрацію, групування та агрегацію подій. Код наведено у додатку В.
+Використання вікон (windowing) дозволяє агрегувати дані за певні інтервали часу (наприклад, доба).
+4. Обробка помилок (Dead Letter Queue)
+Для підвищення надійності системи застосовується шаблон DLQ (Dead Letter Queue). Повідомлення, які не вдалося обробити, перенаправляються в окремий топік.
+
+1 private void handleFailure(ConsumerRecord<String, PlaybackEvent> record, Exception ex) {
+2    kafkaTemplate.send("playback-events-dlq", record.key(), record.value());
+3 }
+
+Це дозволяє уникнути блокування основного потоку обробки.
+5. Додаткові споживачі подій
+Kafka дозволяє підключати декілька незалежних споживачів до одного топіку. Наприклад, сервіс рекомендацій:
+
+1 @KafkaListener(topics = "playback-events", groupId = "recommendation-service")
+2 public void handle(PlaybackEvent event) {
+3    updateUserEmbedding(event);
+4    updateRecommendations(event.getUserId());
+5 }
+
+Таким чином, одна подія використовується одночасно різними підсистемами без прямої залежності між ними.
+6. Особливості забезпечення надійності
+У подібних системах зазвичай використовується модель доставки at-least-once. Це означає, що повідомлення може бути доставлено більше одного разу, тому необхідна ідентифікація подій.
+Приклад дедуплікації:
+
+1 .distinctBy(_.eventId)
+
+Основні аспекти:
+•	унікальний ідентифікатор події (eventId); 
+•	обробка дублікатів на рівні споживача; 
+•	збереження порядку подій через ключ (userId). 
+8. Узагальнена схема роботи
+Загальний процес функціонування системи:
+1.	Сервіс відтворення генерує подію. 
+2.	Подія публікується у Kafka. 
+3.	Kafka забезпечує збереження та доставку повідомлень. 
+4.	Подію обробляють декілька сервісів: 
+o	аналітика; 
+o	рекомендації; 
+o	моніторинг. 
+5.	Результати зберігаються у відповідних сховищах (аналітичні бази, кеші, ML-системи).
+
+3.7 Організація матеріалів у GitHub Структура директорії (головна гілка main):
+Назва репозиторію: NureKolodiiukNadiia/apz-pzpi-23-2-kolodiiuk-nadiia
+Структура репозиторію:
+Pract1/  
+Pract2/  
+Lab1/  
+Lab2/  
+Lab3/  
+Lab4/  
+Lab5/  
+README.md  
+LICENSE  
+Файл опису репозиторію README.md:
+
+# <назва репозиторію>
+<академічна група>
+<прізвище імʼя>
+<тема доповіді ПЗ1>
+<тема доповіді ПЗ2>
+<тема проєкту ЛР>
+
+3.8 Підготовка презентації та відеозапису 
+Слайди та відеодоповідь створені відповідно до встановлених вимог дисципліни (11 слайдів, тривалість 8 хвилин).
+
+4 ВИСНОВКИ
+
+У результаті виконання практичного заняття було досліджено мікросервісну та event-driven архітектуру Spotify. Визначено, що успіх системи ґрунтується на децентралізації команд (модель Squads), використанні потужних інструментів обробки подій у реальному часі (Apache Kafka) та інтелектуальних алгоритмів персоналізації. Завдяки гібридній хмарній інфраструктурі, ефективному кешуванню, контейнеризації та розвиненим CI/CD процесам, архітектура Spotify забезпечує високу масштабованість, низьку латентність та стійкість до відмов для мільйонів користувачів по всьому світу. 
+ДОДАТОК А
+Відеозапис доповіді
+
+Відеозапис доповіді на YouTube: https://youtu.be/kA88quLOK2s 
+
+Хронологічний опис
+
+0:00 - Вступ. Тема: Архітектура програмної системи Spotify.
+0:11 - Масштаб системи та ключові нефункціональні вимоги.
+0:54 - Головні виклики та перехід до мікросервісної архітектури.
+1:44 - Організаційна архітектура команди (модель Spotify: Squad, Tribe, Chapter, Guild).
+2:52 - Клієнтський рівень та механізм аудіо-стрімінгу.
+3:53 - Backend: мікросервіси, Polyglot-стек технологій та патерни стійкості.
+4:54 - Event-Driven Architecture (подієва основа) з використанням Apache Kafka.
+5:47 - Рівень даних: Polyglot Persistence (Cassandra, PostgreSQL, Redis, Amazon S3).
+6:34 - Інфраструктура, хмарна стратегія та оркестрація за допомогою Kubernetes.
+7:04 - Observability (моніторинг, логування, трасування) та DevOps-практики.
+7:34 - Архітектурні компроміси та підсумки. 
+ДОДАТОК Б
+Слайди презентації
+
+  
+
+Рисунок Б.1 – Титульний слайд
+
+ 
+
+Рисунок Б.2 –Короткий огляд системи
+  
+
+Рисунок Б.3 – Виклики перед системою
+
+ 
+
+Рисунок Б.4 – Організаційна архітектура
+ 
+
+Рисунок Б.5 – Клієнтський рівень та механізм стрімінгу
+
+  
+
+Рисунок Б.6 – Мікросервісна архітектура Backend`у
+  
+
+Рисунок Б.7 – Event-driven архітектура
+
+  
+
+Рисунок Б.8 – Рівень даних
+ 
+
+Рисунок Б.9 – Інфраструктура та оркестрація
+
+  
+
+Рисунок Б.10 – Observavility та DevOps практики
+  
+
+Рисунок Б.11 – Архітектурні компроміси
+ 
+ДОДАТОК В
+Приклади програмного коду та запити до ШІ
+
+1 @Service
+2 public class PlaybackEventService
+3 {
+4     private final KafkaTemplate<String, PlaybackEvent> kafkaTemplate;
+5
+6     public PlaybackEventService(KafkaTemplate<String, PlaybackEvent> kafkaTemplate) {
+7         this.kafkaTemplate = kafkaTemplate;
+8     }
+9
+10     public CompletableFuture<SendResult<String, PlaybackEvent>> publishPlaybackEvent(PlaybackEvent event) {
+11
+12         ProducerRecord<String, PlaybackEvent> record =
+13             new ProducerRecord<>("playback-events", event.getUserId(), event);
+14
+15         record.headers().add("event-type", "PLAYBACK_STARTED".getBytes());
+16         record.headers().add("schema-version", "v1".getBytes());
+17
+18         return kafkaTemplate.send(record)
+19             .whenComplete((result, ex) -> {
+20             if (ex != null) {
+21                 handleFailure(event, ex);
+22             } else {
+23                 logSuccess(result);
+24             }
+25         });
+26     }
+27
+28     private void handleFailure(PlaybackEvent event, Throwable ex) {
+29         // обробка помилки або повторна відправка
+30     }
+31
+32     private void logSuccess(SendResult<String, PlaybackEvent> result) {
+33         // логування та метрики
+34     }
+35 }
+36
+37 spring:
+38 kafka:
+39 producer:
+40 acks: all
+41 retries: 10
+42 enable-idempotence: true
+43 key-serializer: org.apache.kafka.common.serialization.StringSerializer
+44 value-serializer: io.confluent.kafka.serializers.KafkaAvroSerializer
+45
+46 @Component
+47 public class PlaybackEventConsumer
+48 {
+49     @KafkaListener(
+50         topics = "playback-events",
+51         groupId = "analytics-service"
+52     )
+53     public void consume(ConsumerRecord<String, PlaybackEvent> record,
+54         Acknowledgment ack) {
+55
+56         try {
+57             PlaybackEvent event = record.value();
+58
+59             process(event);
+60
+61             ack.acknowledge();
+62
+63         } catch (Exception ex) {
+64             handleFailure(record, ex);
+65         }
+66     }
+67
+68     private void process(PlaybackEvent event) {
+69         // бізнес-логіка обробки
+70     }
+71
+72     private void handleFailure(ConsumerRecord<String, PlaybackEvent> record, Exception ex) {
+73         // відправка у DLQ
+74     }
+75 }
+76
+77
+78 pipeline
+79     .readFromKafka("playback-events")
+80     .map(parseEvent)
+81     .filter(_.duration > 30)
+82     .keyBy(_.userId)
+83     .windowBy(FixedWindows(Duration.standardDays(1)))
+84     .aggregate(
+85         zero = UserStats.empty,
+86         seqOp = (acc, e) => acc.add(e),
+87         combOp = (a, b) => a.merge(b)
+88     )
+89     .map(toBigQueryRow)
+90     .writeToBigQuery("analytics.daily_user_stats")
+
+Запит 1
+Назва інструменту та версія: GPT Image 2.0
+Мета використання: створення діаграми.
+Внесок автора: створення плану та верифікація виконання.
+Task: Generate a C4 model diagram for Spotify with a white background and 16:9 aspect ratio.
+
+Level 1: System Context Diagram
+
+Goal: Define the boundaries of the Spotify ecosystem and how it interacts with the world.
+
+Primary Actor:
+
+Listener (User): Plays music, creates playlists, and manages subscriptions.
+
+The System (Center):
+
+Spotify Software System: The core platform providing music discovery, streaming, and social features.
+
+External Systems (The Boundary):
+
+Content Providers (Labels/Distributors): Systems like Universal or Sony that push metadata and audio files via high-volume ingestion APIs.
+
+Payment Providers: Stripe or PayPal for processing Premium subscriptions.
+
+Identity Providers: Facebook, Google, and Apple for OAuth/SSO.
+
+Notification Systems: FCM (Firebase) or APNs for push notifications.
+
+Level 2: Container Diagram
+
+Goal: Show the high-level technical building blocks. In the diagram editor, draw these as distinct "execution environments" (boxes) inside the System boundary.
+
+Client-Side Containers:
+
+Mobile App: (Swift/Kotlin) The primary interface for on-the-go listening.
+
+Web Application: (React/TypeScript SPA) Desktop-grade browser experience.
+
+Desktop Client: (Electron) For offline playback and local file management.
+
+Server-Side Containers:
+
+API Gateway: (e.g., Envoy or YARP-style) Entry point for all traffic. Handles rate limiting, SSL termination, and routing.
+
+Identity Service: Manages user profiles, JWT issuance, and authentication.
+
+Catalog Service: Manages the relationships between Artists, Albums, and Tracks.
+
+Search Service: Powered by Elasticsearch; handles fuzzy search and indexing.
+
+Streaming/Playback Service: Coordinates the handshake for audio delivery.
+
+Recommendation Engine: (Python/Scala) Background workers processing ML models.
+
+Data Stores:
+
+Account DB (Relational/PostgreSQL): Stores highly consistent data (Billing, User Profile).
+
+Metadata Store (NoSQL/Cassandra): Handles the high-scale, read-heavy catalog.
+
+State Cache (Redis): Stores active sessions and user "Current Play" state.
+
+Event Bus (Kafka): The backbone for telemetry, analytics, and service synchronization.
+
+Level 3: Component Diagram (Zooming into the "Catalog Service")
+
+Goal: Show the internal logic of a single container. Zoom into the Catalog Service and draw the following components inside that container:
+
+API Controller: Exposes REST or gRPC endpoints to the API Gateway.
+
+Track Metadata Manager: Logic for fetching track details, lyrics, and credits.
+
+Artist/Album Aggregator: Component that joins data across multiple NoSQL tables for complex views.
+
+Cache Component: Logic for interfacing with the Redis cluster to avoid hitting Cassandra for every "Top 50" request.
+
+Change Data Capture (CDC) Publisher: Listens for updates to the database and publishes "Catalog Updated" events to Kafka.
+
+Validation Component: Ensures incoming data from ingestion pipelines meets schema requirements.
+
+Data Flow and Relationship Labels
+
+Use these specific labels for arrows:
+
+Source	Target	Label / Protocol
+Mobile App	API Gateway	Uses HTTPS/gRPC to request track
+API Gateway	Identity Service	Validates JWT token
+Catalog Service	Metadata Store (Cassandra)	Reads/Writes metadata via CQL
+Streaming Service	Event Bus (Kafka)	Publishes "Track Played" event
+Recommendation Engine	Event Bus (Kafka)	Consumes events for model training
+Catalog Service	State Cache (Redis)	Checks for cached artist profile
+Formatting Requirements:
+
+Background: White
+
+Aspect Ratio: 16:9
+
+Запит 2
+Назва інструменту та версія: GPT Image 2.0
+Мета використання: створення діаграми.
+Внесок автора: створення плану та верифікація виконання.
+Task: Generate a deployment diagram for Spotify with a white background and 16:9 aspect ratio.
+
+1. The Client Tier (The Edge)
+Depict these as separate physical "Device" nodes.
+
+Mobile Device (iOS/Android): Running the Compiled App Binary.
+
+Desktop (Windows/macOS): Running the Electron-based Desktop Client.
+
+Web Browser: Running the React/TypeScript Single Page Application (SPA).
+
+Connections: All clients connect via HTTPS (Port 443) or gRPC for low-latency bidirectional communication (like Spotify Connect).
+
+2. The Network & Acceleration Tier
+This sits between the users and your data centers.
+
+Global DNS: Use a Cloud DNS node to resolve requests.
+
+Content Delivery Network (CDN) (e.g., Google Cloud CDN or Fastly):
+
+Artifacts: Cached audio chunks (.ogg, .aac) and static web assets (JS/CSS).
+
+Cloud Load Balancer (L7): An Anycast IP entry point that handles SSL termination and routes traffic to the nearest regional cluster.
+
+3. The Regional Cluster (Kubernetes/GKE)
+Represent this as a large "Node" or "System Boundary" titled Regional VPC. Inside, draw a Kubernetes Cluster.
+
+A. Ingress & Service Mesh
+
+API Gateway Node (e.g., Envoy or Istio Ingress): Handles rate limiting, authentication header validation, and routing.
+
+Service Mesh: Depict a "Sidecar" pattern for inter-service communication using mTLS.
+
+B. Microservice Pods (The Compute)
+Group these into logical namespaces:
+
+Playback Namespace: Contains the Streaming Service and Key Exchange Service (DRM).
+
+Social Namespace: Contains Activity Service (what friends are listening to).
+
+Search Namespace: Contains Elasticsearch/Solr interface pods.
+
+Playlist Namespace: High-write frequency service for CRUD operations on user libraries.
+
+4. The Persistence & State Tier
+Draw these as "Database" symbols outside the Kubernetes node but within the VPC.
+
+Metadata Store (Cassandra Cluster): For high-availability user data, playlists, and follows. Use a "Ring" topology if your editor allows.
+
+Fast Cache (Redis Cluster): For session management and frequently accessed "Hot" metadata (Top 50 charts).
+
+Search Index (Elasticsearch): Dedicated cluster for lightning-fast catalog searching.
+
+Object Storage (GCS/S3): The "Source of Truth" for encrypted audio files and artist images.
+
+5. The Event & Analytics Backbone
+This is the "circulatory system" of the architecture.
+
+Managed Kafka Cluster:
+
+Inbound: Telemetry/Logs from the API Gateway.
+
+Outbound: Feeds the Recommendation Engine and Billing Service.
+
+Data Lake (BigQuery/Snowflake): Where long-term playback logs are stored for ML model training (Discover Weekly).
+
+Summary Table for Diagramming
+
+From Node	To Node	Protocol/Port	Purpose
+User Device	CDN	HTTPS / 443	Fetching audio chunks/images
+User Device	Load Balancer	gRPC / 443	API requests (Play/Search)
+Load Balancer	API Gateway	HTTP/2	Internal routing
+Microservices	Kafka	TCP / 9092	Event streaming (Telemetry)
+Streaming Service	Redis	RESP / 6379	Checking active sessions
+Catalog Service	Cassandra	CQL / 9042	Fetching Artist/Track metadata
+Formatting Requirements:
+
+Background: White
+
+Aspect Ratio: 16:9
+
+Запит 3
+Назва інструменту та версія: GPT Image 2.0
+Мета використання: створення діаграми.
+Внесок автора: створення плану та верифікація виконання.
+Task: Generate a UML sequence diagram for Spotify showing the playback flow, with a white background and 16:9 aspect ratio.
+
+Title: Spotify Playback Flow
+
+1. The Lifelines (Participants)
+Set these up horizontally across the top of the diagram, from left to right:
+
+Participant
+User (Actor)
+Client App (Mobile / Web / Desktop)
+API Gateway (Edge Router / Ingress)
+Auth Service (Identity Provider)
+Entitlement Service (License & Region Checker)
+Streaming Service (Core Playback Engine)
+CDN Edge Node (Content Delivery Network)
+Telemetry Ingestion (Kafka Cluster)
+2. The Step-by-Step Execution Flow
+
+Phase 1: The Request and Security Handshake
+
+Step	Source	Target	Description
+1	User	Client App	Clicks "Play" on Track X.
+2	Client App	API Gateway	Sends POST /v1/me/player/play containing the Track_ID. Header includes Authorization: Bearer <JWT>.
+3	API Gateway	Auth Service	Forwards JWT for validation and scopes check.
+4	Auth Service	API Gateway	Returns 200 OK (Token is valid, user ID extracted).
+Phase 2: Authorization and Token Generation
+
+Step	Source	Target	Description
+5	API Gateway	Streaming Service	Routes the validated request, passing along the User ID and Track_ID.
+6	Streaming Service	Entitlement Service	Requests a check via internal gRPC: "Is this user allowed to play this track?" (Checks Premium status, Geofencing, and label licensing restrictions).
+7	Entitlement Service	Streaming Service	Returns True.
+8	Streaming Service	Streaming Service (Self-Message)	Generates a short-lived, cryptographically signed URL pointing to the requested audio file on the CDN. It also fetches the DRM decryption key.
+9	Streaming Service	API Gateway	Returns the signed CDN URL and DRM key.
+10	API Gateway	Client App	Returns 200 OK with the CDN URL and DRM key payload.
+Phase 3: The Data Plane (Audio Streaming)
+
+Step	Source	Target	Description
+11	Client App	CDN Edge Node	Initiates a direct GET request to the signed URL for the first chunk of the audio file (e.g., Range: bytes=0-500000).
+12	CDN Edge Node	Client App	Streams back the encrypted audio bytes.
+13	Client App	Client App (Self-Message)	Decrypts the chunks into the local buffer and begins audio playback.
+14	Client App	User	Audio plays.
+Phase 4: Asynchronous Telemetry
+(This happens parallel to playback, usually triggered after 30 seconds of listening to count as a "stream")
+
+Step	Source	Target	Description
+15	Client App	API Gateway	Sends an async telemetry payload: POST /v1/events/playback (Contains timestamp, Track_ID, duration listened).
+16	API Gateway	Telemetry Ingestion (Kafka)	Publishes the event to a Kafka topic (playback_events) as a fire-and-forget message.
+Important Note: Do not expect a synchronous response back to the client from Kafka; the API Gateway just acknowledges receipt (202 Accepted).
+
+Formatting Requirements:
+
+Background: White
+
+Aspect Ratio: 16:9
